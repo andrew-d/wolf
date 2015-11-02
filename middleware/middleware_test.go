@@ -11,6 +11,8 @@ import (
 )
 
 func TestMiddlewareTypes(t *testing.T) {
+	t.Parallel()
+
 	makeCanonical(func(ctx *context.Context, h http.Handler) http.Handler { return nil })
 	makeCanonical(func(h http.Handler) http.Handler { return nil })
 
@@ -20,12 +22,9 @@ func TestMiddlewareTypes(t *testing.T) {
 }
 
 func TestMiddlewareOrder(t *testing.T) {
-	var run bool
-	final := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		run = true
-		assert.NotNil(t, ctx)
-	}
+	t.Parallel()
 
+	final, run := makeFinalFunc()
 	stack := New(final, nil)
 
 	var calls []string
@@ -48,15 +47,79 @@ func TestMiddlewareOrder(t *testing.T) {
 		return wrap
 	})
 
-	// Get a handler
 	handler := stack.Get()
 	defer stack.Release(handler)
 
-	var w http.ResponseWriter = httptest.NewRecorder()
-	r, err := http.NewRequest("GET", "/foo", nil)
-	assert.NoError(t, err)
-	handler.ServeHTTP(w, r)
-
-	assert.True(t, run)
+	// Both middleware should run
+	sendRequest(handler)
+	assert.True(t, *run)
 	assert.Equal(t, []string{"one", "two"}, calls)
+}
+
+func TestRemove(t *testing.T) {
+	t.Parallel()
+
+	final, run := makeFinalFunc()
+	stack := New(final, nil)
+
+	var calls []string
+
+	// Make three middleware functions
+	middlewareMaker := func(name string) func(http.Handler) http.Handler {
+		return func(h http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				calls = append(calls, name)
+				h.ServeHTTP(w, r)
+			})
+		}
+	}
+	mw1 := middlewareMaker("one")
+	mw2 := middlewareMaker("two")
+	mw3 := middlewareMaker("three")
+
+	// Push them both on the stack.
+	stack.Push(mw1)
+	stack.Push(mw2)
+	stack.Push(mw3)
+
+	// Assert that we run all middleware.
+	handler := stack.Get()
+	sendRequest(handler)
+	assert.True(t, *run)
+	assert.Equal(t, []string{"one", "two", "three"}, calls)
+	stack.Release(handler)
+
+	// Reset our state ...
+	*run = false
+	calls = []string{}
+
+	// ... remove the second middleware ...
+	stack.Remove(mw2)
+
+	// ... and assert that it's actually gone
+	handler = stack.Get()
+	sendRequest(handler)
+	assert.True(t, *run)
+	assert.Equal(t, []string{"one", "three"}, calls)
+	stack.Release(handler)
+}
+
+func sendRequest(h http.Handler) error {
+	w := httptest.NewRecorder()
+	r, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		return err
+	}
+
+	h.ServeHTTP(w, r)
+	return nil
+}
+
+func makeFinalFunc() (FinalFunc, *bool) {
+	run := new(bool)
+	final := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		*run = true
+	}
+
+	return final, run
 }

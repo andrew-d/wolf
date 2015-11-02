@@ -25,10 +25,6 @@ type FinalFunc func(context.Context, http.ResponseWriter, *http.Request)
 //
 // MiddlewareStack is safe for use in multiple goroutines concurrently.
 type MiddlewareStack struct {
-	// List of middleware functions
-	funcs []canonicalMiddleware
-	mu    sync.Mutex
-
 	// Cache of pre-built middleware stacks
 	cache *sync.Pool
 
@@ -38,6 +34,13 @@ type MiddlewareStack struct {
 	// The base context for all middleware (i.e. this is passed to the first
 	// middleware).  By default, it is set to `context.Background()`.
 	BaseCtx context.Context
+
+	// List of middleware functions
+	funcs []canonicalMiddleware
+	mu    sync.Mutex
+
+	// List of input middleware values (i.e. not coerced to `canonicalMiddleware`).
+	orig []types.MiddlewareType
 }
 
 // New creates and returns a new middleware stack with some initial set of
@@ -60,22 +63,22 @@ func New(handler FinalFunc, middleware []types.MiddlewareType) *MiddlewareStack 
 
 // Push adds a new middleware to the current stack.  This invalidates any
 // existing cached stacks.
-func (m *MiddlewareStack) Push(fn types.MiddlewareType) {
+func (m *MiddlewareStack) Push(mw types.MiddlewareType) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	// Call 'real' push function
-	m.push(fn)
+	m.push(mw)
 
 	// Invalidate any existing cache
 	m.resetPool()
 }
 
 // Convert a middleware into our canonical type.  Panics on error.
-func makeCanonical(fn types.MiddlewareType) canonicalMiddleware {
+func makeCanonical(mw types.MiddlewareType) canonicalMiddleware {
 	var resolvedFn canonicalMiddleware
 
-	switch f := fn.(type) {
+	switch f := mw.(type) {
 	case func(http.Handler) http.Handler:
 		resolvedFn = func(ctx *context.Context, h http.Handler) http.Handler {
 			return f(h)
@@ -85,7 +88,7 @@ func makeCanonical(fn types.MiddlewareType) canonicalMiddleware {
 	default:
 		msg := fmt.Sprintf(`Invalid middleware type '%T'.  See `+
 			`https://godoc.org/github.com/andrew-d/wolf/types#MiddlewareType `+
-			`for a list of valid middleware types`, fn)
+			`for a list of valid middleware types`, mw)
 		panic(msg)
 	}
 
@@ -94,8 +97,39 @@ func makeCanonical(fn types.MiddlewareType) canonicalMiddleware {
 
 // Add a new middleware to the current stack, without locking or resetting the
 // cache.  Panics on error.
-func (m *MiddlewareStack) push(fn types.MiddlewareType) {
-	m.funcs = append(m.funcs, makeCanonical(fn))
+func (m *MiddlewareStack) push(mw types.MiddlewareType) {
+	// We store both the original and canonical functions, so we can remove a
+	// middleware
+	m.orig = append(m.orig, mw)
+	m.funcs = append(m.funcs, makeCanonical(mw))
+}
+
+// Remove a middleware from the stack.  Does nothing if the given middleware is
+// not in this stack.
+func (m *MiddlewareStack) Remove(mw types.MiddlewareType) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	// Find the index of this middleware
+	idx := -1
+	for i, test := range m.orig {
+		if funcEqual(test, mw) {
+			idx = i
+			break
+		}
+	}
+
+	// Found it?
+	if idx < 0 {
+		return
+	}
+
+	// Remove from the array
+	m.orig = append(m.orig[:idx], m.orig[idx+1:]...)
+	m.funcs = append(m.funcs[:idx], m.funcs[idx+1:]...)
+
+	// Invalidate the middleware cache, since we've changed things
+	m.resetPool()
 }
 
 // Reset (invalidate) any cached stacks.
