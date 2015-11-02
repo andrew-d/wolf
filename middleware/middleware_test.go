@@ -47,11 +47,11 @@ func TestMiddlewareOrder(t *testing.T) {
 		return wrap
 	})
 
-	handler := stack.Get()
-	defer stack.Release(handler)
+	si := stack.Get()
+	defer stack.Release(si)
 
 	// Both middleware should run
-	sendRequest(handler)
+	sendRequest(si.Handler)
 	assert.True(t, *run)
 	assert.Equal(t, []string{"one", "two"}, calls)
 }
@@ -83,11 +83,11 @@ func TestRemove(t *testing.T) {
 	stack.Push(mw3)
 
 	// Assert that we run all middleware.
-	handler := stack.Get()
-	sendRequest(handler)
+	si := stack.Get()
+	sendRequest(si.Handler)
 	assert.True(t, *run)
 	assert.Equal(t, []string{"one", "two", "three"}, calls)
-	stack.Release(handler)
+	stack.Release(si)
 
 	// Reset our state ...
 	*run = false
@@ -97,11 +97,11 @@ func TestRemove(t *testing.T) {
 	stack.Remove(mw2)
 
 	// ... and assert that it's actually gone
-	handler = stack.Get()
-	sendRequest(handler)
+	si = stack.Get()
+	sendRequest(si.Handler)
 	assert.True(t, *run)
 	assert.Equal(t, []string{"one", "three"}, calls)
-	stack.Release(handler)
+	stack.Release(si)
 }
 
 func sendRequest(h http.Handler) error {

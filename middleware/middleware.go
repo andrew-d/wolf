@@ -39,7 +39,7 @@ type MiddlewareStack struct {
 
 	// The base context for all middleware (i.e. this is passed to the first
 	// middleware).  By default, it is set to `context.Background()`.
-	BaseCtx context.Context
+	BaseContext context.Context
 
 	// List of middleware functions
 	funcs []canonicalMiddleware
@@ -49,12 +49,26 @@ type MiddlewareStack struct {
 	orig []types.MiddlewareType
 }
 
+// StackItem represents a single middleware instance, allocated from our
+// MiddlewareStack or returned from the cache.
+type StackItem struct {
+	// The context for this stack item.  This is updated by all middleware, and
+	// will be reset when the stack item is 'returned'.
+	Context context.Context
+
+	// The underlying handler for this item.
+	Handler http.Handler
+
+	// So we know whether or not we can return to a given pool.
+	pool *sync.Pool
+}
+
 // New creates and returns a new middleware stack with some initial set of
 // middleware.
 func New(handler FinalFunc, middleware []types.MiddlewareType) *MiddlewareStack {
 	m := &MiddlewareStack{
-		final:   handler,
-		BaseCtx: context.Background(),
+		final:       handler,
+		BaseContext: context.Background(),
 	}
 
 	// Push all existing.  We can use the 'unlocked' version since we're the
@@ -150,13 +164,23 @@ func (m *MiddlewareStack) resetPool() {
 }
 
 // Get obtains a new middleware stack from the cache.
-func (m *MiddlewareStack) Get() http.Handler {
-	return m.cache.Get().(http.Handler)
+func (m *MiddlewareStack) Get() *StackItem {
+	c := m.cache
+	stack := c.Get().(*StackItem)
+	stack.pool = c
+	return stack
 }
 
 // Release puts a previously-obtained middleware stack back into the cache.
-func (m *MiddlewareStack) Release(h http.Handler) {
-	m.cache.Put(h)
+func (m *MiddlewareStack) Release(s *StackItem) {
+	// Reset the context in the stack.
+	s.Context = m.BaseContext
+	if s.pool != m.cache {
+		return
+	}
+
+	s.pool.Put(s)
+	s.pool = nil
 }
 
 // Constructor function that is used to create new middleware stacks when the
@@ -164,20 +188,21 @@ func (m *MiddlewareStack) Release(h http.Handler) {
 //
 // This is where the actual middlewares are applied.
 func (m *MiddlewareStack) newResolved() interface{} {
-	// Copy variables in 'm' that are used in the function below.
-	ctx := m.BaseCtx
+	stack := &StackItem{
+		Context: m.BaseContext,
+		pool:    m.cache,
+	}
 	final := m.final
 
-	var finalFunc http.Handler
-	finalFunc = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	stack.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Dispatch to our final handler.
-		final(ctx, w, r)
+		final(stack.Context, w, r)
 	})
 
 	// Apply all middleware.
 	for i := len(m.funcs) - 1; i >= 0; i-- {
-		finalFunc = m.funcs[i](&ctx, finalFunc)
+		stack.Handler = m.funcs[i](&stack.Context, stack.Handler)
 	}
 
-	return finalFunc
+	return stack
 }
