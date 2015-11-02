@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -8,6 +9,11 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/andrew-d/wolf2/types"
+)
+
+var (
+	// Returned when removing a middleware from a stack that does not contain it.
+	ErrMiddlewareNotFound = errors.New("middleware: not found")
 )
 
 // canonicalMiddleware is the 'canonical' middleware type - we coerce all other
@@ -104,9 +110,11 @@ func (m *MiddlewareStack) push(mw types.MiddlewareType) {
 	m.funcs = append(m.funcs, makeCanonical(mw))
 }
 
-// Remove a middleware from the stack.  Does nothing if the given middleware is
-// not in this stack.
-func (m *MiddlewareStack) Remove(mw types.MiddlewareType) {
+// Remove a middleware from the stack.  If the middleware does not exist in
+// this stack, this function will return ErrMiddlewareNotFound.  If the
+// middleware was removed, this function will invalidate any existing cached
+// stacks.
+func (m *MiddlewareStack) Remove(mw types.MiddlewareType) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -121,7 +129,7 @@ func (m *MiddlewareStack) Remove(mw types.MiddlewareType) {
 
 	// Found it?
 	if idx < 0 {
-		return
+		return ErrMiddlewareNotFound
 	}
 
 	// Remove from the array
@@ -130,6 +138,7 @@ func (m *MiddlewareStack) Remove(mw types.MiddlewareType) {
 
 	// Invalidate the middleware cache, since we've changed things
 	m.resetPool()
+	return nil
 }
 
 // Reset (invalidate) any cached stacks.
