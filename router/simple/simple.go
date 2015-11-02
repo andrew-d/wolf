@@ -14,7 +14,7 @@ import (
 type route struct {
 	pattern router.Pattern
 	handler router.Handler
-	mware   middleware.MiddlewareStack
+	mware   *middleware.MiddlewareStack
 }
 
 // SimpleRouter is the simplest-possible router - it checks each route in
@@ -50,20 +50,21 @@ func New(routeDefs []builder.RouteDef) *SimpleRouter {
 // This function allows SimpleRouter to implement net/http.Handler
 func (s *SimpleRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	found := false
-	ctx := context.Background()
 
 	for _, route := range s.routes[r.Method] {
-		if route.pattern.Match(r, &ctx) {
-			// TODO:
-			//  - Preload context with empty URLParams, save reference to it
-			//  - Here, the 'run' should update the URLParams map that already
-			//    exists in the context
-			route.pattern.Run(r, &ctx)
+		stack := route.mware.Get()
+
+		if route.pattern.Match(r, &stack.Context) {
+			found = true
+			route.pattern.Run(r, &stack.Context)
+			stack.Handler.ServeHTTP(w, r)
 		}
+
+		route.mware.Release(stack)
 	}
 
 	// Support NotFound handler
 	if !found && s.NotFound != nil {
-		s.NotFound.ServeHTTP(ctx, w, r)
+		s.NotFound.ServeHTTPC(context.Background(), w, r)
 	}
 }
