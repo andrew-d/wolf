@@ -86,16 +86,6 @@ func (r *builder) Mount(pattern string, sr Builder) {
 	})
 }
 
-// TODO: Need to refactor way we store route definitions.  Should:
-//   - Store either a route definition or a sub-builder
-//   - When getting definitions, we recurse into subbuilders
-//     - Sub-builders should be 'inherit' or not.  Inherit builders inherit
-//       our middleware specification, whereas others do not.
-//     - We actually build the final route defs only when the RouteDefs()
-//       call is made
-//
-// Group, Route inherit, 'Mount' does not
-
 func (r *builder) RouteDefs() []RouteDef {
 	defs := []RouteDef{}
 	seen := map[*builder]struct{}{}

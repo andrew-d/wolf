@@ -8,7 +8,7 @@ type private struct{}
 
 var urlParamKey private
 
-// AddURLParams will add the given URL parameters to the given context.
+// SetURLParams will add the given URL parameters to the given context.
 func SetURLParams(ctx context.Context, matches map[string]string) context.Context {
 	return context.WithValue(ctx, urlParamKey, matches)
 }
