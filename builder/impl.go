@@ -23,7 +23,7 @@ type builderSpec struct {
 }
 
 type routeOrBuilderSpec struct {
-	pattern string
+	pattern types.PatternType
 
 	// Only one of these will be given
 	subBuilder *builderSpec
@@ -39,9 +39,9 @@ func newBuilder() *builder {
 	return &builder{}
 }
 
-func (r *builder) Handle(method, path string, handler types.HandlerType) {
+func (r *builder) Handle(method string, pattern types.PatternType, handler types.HandlerType) {
 	r.specs = append(r.specs, routeOrBuilderSpec{
-		pattern: path,
+		pattern: pattern,
 		route: &routeSpec{
 			method:  method,
 			handler: handler,
@@ -143,32 +143,32 @@ func (r *builder) RouteDefs() []RouteDef {
 
 // Helper functions below here
 
-func (r *builder) Delete(path string, handler types.HandlerType) {
-	r.Handle("DELETE", path, handler)
+func (r *builder) Delete(pattern types.PatternType, handler types.HandlerType) {
+	r.Handle("DELETE", pattern, handler)
 }
 
-func (r *builder) Get(path string, handler types.HandlerType) {
-	r.Handle("GET", path, handler)
+func (r *builder) Get(pattern types.PatternType, handler types.HandlerType) {
+	r.Handle("GET", pattern, handler)
 }
 
-func (r *builder) Head(path string, handler types.HandlerType) {
-	r.Handle("HEAD", path, handler)
+func (r *builder) Head(pattern types.PatternType, handler types.HandlerType) {
+	r.Handle("HEAD", pattern, handler)
 }
 
-func (r *builder) Options(path string, handler types.HandlerType) {
-	r.Handle("OPTIONS", path, handler)
+func (r *builder) Options(pattern types.PatternType, handler types.HandlerType) {
+	r.Handle("OPTIONS", pattern, handler)
 }
 
-func (r *builder) Patch(path string, handler types.HandlerType) {
-	r.Handle("PATCH", path, handler)
+func (r *builder) Patch(pattern types.PatternType, handler types.HandlerType) {
+	r.Handle("PATCH", pattern, handler)
 }
 
-func (r *builder) Post(path string, handler types.HandlerType) {
-	r.Handle("POST", path, handler)
+func (r *builder) Post(pattern types.PatternType, handler types.HandlerType) {
+	r.Handle("POST", pattern, handler)
 }
 
-func (r *builder) Put(path string, handler types.HandlerType) {
-	r.Handle("PUT", path, handler)
+func (r *builder) Put(pattern types.PatternType, handler types.HandlerType) {
+	r.Handle("PUT", pattern, handler)
 }
 
 var _ Builder = &builder{}

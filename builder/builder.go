@@ -37,16 +37,16 @@ type Builder interface {
 	Mount(pattern string, sr Builder)
 
 	// Main handler method
-	Handle(method, path string, handler types.HandlerType)
+	Handle(method string, pattern types.PatternType, handler types.HandlerType)
 
 	// Helper functions
-	Delete(path string, handler types.HandlerType)
-	Get(path string, handler types.HandlerType)
-	Head(path string, handler types.HandlerType)
-	Options(path string, handler types.HandlerType)
-	Patch(path string, handler types.HandlerType)
-	Post(path string, handler types.HandlerType)
-	Put(path string, handler types.HandlerType)
+	Delete(pattern types.PatternType, handler types.HandlerType)
+	Get(pattern types.PatternType, handler types.HandlerType)
+	Head(pattern types.PatternType, handler types.HandlerType)
+	Options(pattern types.PatternType, handler types.HandlerType)
+	Patch(pattern types.PatternType, handler types.HandlerType)
+	Post(pattern types.PatternType, handler types.HandlerType)
+	Put(pattern types.PatternType, handler types.HandlerType)
 
 	// Returns a list of all route definitions on this builder (note: this
 	// includes all definitions from attached subbuilders, groups, etc.)
@@ -56,7 +56,7 @@ type Builder interface {
 // This type represents a single route definition.
 type RouteDef struct {
 	Method     string
-	Pattern    string
+	Pattern    types.PatternType
 	Handler    types.HandlerType
 	Middleware []types.MiddlewareType
 }

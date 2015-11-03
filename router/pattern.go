@@ -6,6 +6,8 @@ import (
 	"regexp"
 
 	"golang.org/x/net/context"
+
+	"github.com/andrew-d/wolf2/types"
 )
 
 // A Pattern determines whether or not a given request matches some criteria.
@@ -43,8 +45,7 @@ type Pattern interface {
 // documentation for PatternType for a list of which types are accepted). It is
 // the caller's responsibility to ensure that ParsePattern is called in a
 // type-safe manner.
-func ParsePattern(raw interface{}) Pattern {
-	// TODO: interface{} ==> PatternType
+func ParsePattern(raw types.PatternType) Pattern {
 	switch v := raw.(type) {
 	case Pattern:
 		return v
@@ -54,7 +55,8 @@ func ParsePattern(raw interface{}) Pattern {
 		return ParseStringPattern(v)
 	default:
 		msg := fmt.Sprintf(`Unknown pattern type %T. See `+
-			`TODO for a list of acceptable types.`, v)
+			`https://godoc.org/github.com/andrew-d/wolf/types#PatternType `+
+			`for a list of acceptable types.`, v)
 		panic(msg)
 	}
 }
