@@ -30,17 +30,21 @@ type SimpleRouter struct {
 // New takes a list of route definitions (generally created by using the
 // builder package) and returns a router instance.
 func New(routeDefs []builder.RouteDef) *SimpleRouter {
+	// Iterate over all the route definitions and save the routes for each
+	// method in a map, indexed by HTTP method.
 	methods := make(map[string][]route)
-
 	for _, def := range routeDefs {
+		// A route contains a parsed pattern and handler.
 		r := route{
 			pattern: router.ParsePattern(def.Pattern),
 			handler: router.MakeHandler(def.Handler),
 		}
 
-		// Point the middleware at the handler's serve function.
+		// The middleware's "final function" is simply the handler's serve
+		// function.
 		r.mware = middleware.New(r.handler.ServeHTTPC, def.Middleware)
 
+		// Save this route.
 		methods[def.Method] = append(methods[def.Method], r)
 	}
 
@@ -51,9 +55,16 @@ func New(routeDefs []builder.RouteDef) *SimpleRouter {
 func (s *SimpleRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	found := false
 
+	// Iterate over all routes for this method.
 	for _, route := range s.routes[r.Method] {
 		stack := route.mware.Get()
 
+		// If the route matches, then we run the matching again in order to
+		// capture any variables from dynamic portions of the route, and then
+		// run the actual handler.
+		//
+		// Note: the handler will actually dispatch to the middleware, and then
+		// the final handler function.
 		if route.pattern.Match(r, &stack.Context) {
 			found = true
 			route.pattern.Run(r, &stack.Context)
@@ -61,10 +72,20 @@ func (s *SimpleRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		route.mware.Release(stack)
+
+		if found {
+			break
+		}
 	}
 
-	// Support NotFound handler
-	if !found && s.NotFound != nil {
-		s.NotFound.ServeHTTPC(context.Background(), w, r)
+	// If we didn't get a route, then we either run the user-provided not-found
+	// handler (if provided), or dispatch to the standard library's NotFound
+	// handler.
+	if !found {
+		if s.NotFound != nil {
+			s.NotFound.ServeHTTPC(context.Background(), w, r)
+		} else {
+			http.NotFound(w, r)
+		}
 	}
 }
