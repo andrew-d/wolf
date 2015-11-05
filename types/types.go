@@ -1,8 +1,9 @@
 package types
 
 // HandlerType is an alias for interface{}, but is documented here for clarity.
-// wolf will accept a handler of one of the following types, and will convert
-// it to the Handler interface that is used internally.
+// Packages that use portions of wolf are free to accept any type, but all
+// components of wolf will accept a handler of one of the following types, and
+// will convert it to the Handler interface that is used internally.
 //
 //	- types that implement http.Handler
 //	- types that implement Handler
@@ -11,16 +12,18 @@ package types
 type HandlerType interface{}
 
 // MiddlewareType is an alias for interface{}, but is documented here for
-// clarity.  wolf will accept middleware of one of the following types, and
-// will convert it to the internal middleware type.
+// clarity.  Packages that use portions of wolf are free to accept any type,
+// but all components of wolf will accept middleware of one of the following
+// types, and will convert it to the internal middleware type.
 //
 //	- func(*context.Context, http.Handler) http.Handler
 //	- func(http.Handler) http.Handler
 type MiddlewareType interface{}
 
 // PatternType is an alias for interface{}, but is documented here for clarity.
-// wolf will accept a pattern of one of the following types, and will convert
-// it to an underlying 'Pattern' interface.
+// Packages that use portions of wolf are free to accept any type, but all
+// components of wolf will accept a pattern of one of the following types, and
+// will convert it to an underlying 'Pattern' interface.
 //
 //   - types that implement the Pattern interface
 //   - string, which is interpreted as a Sinatra-like URL pattern. In
