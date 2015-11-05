@@ -32,7 +32,9 @@ type SimpleRouter struct {
 func New(routeDefs []builder.RouteDef) *SimpleRouter {
 	// Iterate over all the route definitions and save the routes for each
 	// method in a map, indexed by HTTP method.
-	methods := make(map[string][]route)
+	//
+	// Note: The `9` below == number of helper methods we have.
+	methods := make(map[string][]route, 9)
 	for _, def := range routeDefs {
 		// A route contains a parsed pattern and handler.
 		r := route{
@@ -44,8 +46,13 @@ func New(routeDefs []builder.RouteDef) *SimpleRouter {
 		// function.
 		r.mware = middleware.New(r.handler.ServeHTTPC, def.Middleware)
 
-		// Save this route.
-		methods[def.Method] = append(methods[def.Method], r)
+		// Save this route.  For efficiency, we pre-allocate an array with
+		// space for 32 routes for every method we have.
+		arr := methods[def.Method]
+		if arr == nil {
+			arr = make([]route, 0, 32)
+		}
+		methods[def.Method] = append(arr, r)
 	}
 
 	return &SimpleRouter{routes: methods}
