@@ -22,8 +22,8 @@ func (p RegexpPattern) Prefix() string {
 	return p.prefix
 }
 
-func (p RegexpPattern) Match(r *http.Request, c *context.Context) bool {
-	return p.match(r, c, false)
+func (p RegexpPattern) Match(r *http.Request) bool {
+	return p.match(r, nil, false)
 }
 
 func (p RegexpPattern) Run(r *http.Request, c *context.Context) {

@@ -22,8 +22,8 @@ func (s StringPattern) Prefix() string {
 	return s.literals[0]
 }
 
-func (s StringPattern) Match(r *http.Request, c *context.Context) bool {
-	return s.match(r, c, true)
+func (s StringPattern) Match(r *http.Request) bool {
+	return s.match(r, nil, true)
 }
 
 func (s StringPattern) Run(r *http.Request, c *context.Context) {

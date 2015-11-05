@@ -57,23 +57,20 @@ func (s *SimpleRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Iterate over all routes for this method.
 	for _, route := range s.routes[r.Method] {
-		stack := route.mware.Get()
-
 		// If the route matches, then we run the matching again in order to
 		// capture any variables from dynamic portions of the route, and then
 		// run the actual handler.
 		//
 		// Note: the handler will actually dispatch to the middleware, and then
 		// the final handler function.
-		if route.pattern.Match(r, &stack.Context) {
+		if route.pattern.Match(r) {
 			found = true
+
+			stack := route.mware.Get()
 			route.pattern.Run(r, &stack.Context)
 			stack.Handler.ServeHTTP(w, r)
-		}
+			route.mware.Release(stack)
 
-		route.mware.Release(stack)
-
-		if found {
 			break
 		}
 	}

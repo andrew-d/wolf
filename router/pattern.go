@@ -25,12 +25,12 @@ type Pattern interface {
 	// return the empty string.
 	Prefix() string
 
-	// Returns true if the request satisfies the pattern. This function is
-	// free to examine both the request and the context to make this
-	// decision. Match should not modify either argument, and since it will
-	// potentially be called several times over the course of matching a
-	// request, it should be reasonably efficient.
-	Match(r *http.Request, ctx *context.Context) bool
+	// Returns true if the request satisfies the pattern. This function should
+	// only examine the request to make this decision, and should be idempotent
+	// (i.e. it should be a pure function). Match should not modify its
+	// arguments, and since it will potentially be called several times over
+	// the course of matching a request, it should be reasonably efficient.
+	Match(r *http.Request) bool
 
 	// Run the pattern on the request and context, modifying the context as
 	// necessary to bind URL parameters or other parsed state.
