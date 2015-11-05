@@ -143,6 +143,10 @@ func (r *builder) RouteDefs() []RouteDef {
 
 // Helper functions below here
 
+func (r *builder) Connect(pattern types.PatternType, handler types.HandlerType) {
+	r.Handle("CONNECT", pattern, handler)
+}
+
 func (r *builder) Delete(pattern types.PatternType, handler types.HandlerType) {
 	r.Handle("DELETE", pattern, handler)
 }
@@ -169,6 +173,10 @@ func (r *builder) Post(pattern types.PatternType, handler types.HandlerType) {
 
 func (r *builder) Put(pattern types.PatternType, handler types.HandlerType) {
 	r.Handle("PUT", pattern, handler)
+}
+
+func (r *builder) Trace(pattern types.PatternType, handler types.HandlerType) {
+	r.Handle("TRACE", pattern, handler)
 }
 
 var _ Builder = &builder{}

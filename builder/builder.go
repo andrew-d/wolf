@@ -40,6 +40,7 @@ type Builder interface {
 	Handle(method string, pattern types.PatternType, handler types.HandlerType)
 
 	// Helper functions
+	Connect(pattern types.PatternType, handler types.HandlerType)
 	Delete(pattern types.PatternType, handler types.HandlerType)
 	Get(pattern types.PatternType, handler types.HandlerType)
 	Head(pattern types.PatternType, handler types.HandlerType)
@@ -47,6 +48,7 @@ type Builder interface {
 	Patch(pattern types.PatternType, handler types.HandlerType)
 	Post(pattern types.PatternType, handler types.HandlerType)
 	Put(pattern types.PatternType, handler types.HandlerType)
+	Trace(pattern types.PatternType, handler types.HandlerType)
 
 	// Returns a list of all route definitions on this builder (note: this
 	// includes all definitions from attached subbuilders, groups, etc.)
