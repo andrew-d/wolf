@@ -3,7 +3,7 @@ package builder
 import (
 	"fmt"
 
-	"github.com/andrew-d/wolf2/types"
+	"github.com/andrew-d/wolf/types"
 )
 
 var _ = fmt.Println

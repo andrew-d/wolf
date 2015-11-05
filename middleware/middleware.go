@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/andrew-d/wolf2/types"
+	"github.com/andrew-d/wolf/types"
 )
 
 var (

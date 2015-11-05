@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/andrew-d/wolf2/types"
+	"github.com/andrew-d/wolf/types"
 )
 
 // Handler is similar to net/http's http.Handler, but accepts a Context from
@@ -54,7 +54,7 @@ func MakeHandler(h types.HandlerType) Handler {
 		return netHTTPWrap{http.HandlerFunc(f)}
 	default:
 		msg := fmt.Sprintf(`Invalid handler type '%T'.  See `+
-			`https://godoc.org/github.com/andrew-d/wolf2/types#HandlerType `+
+			`https://godoc.org/github.com/andrew-d/wolf/types#HandlerType `+
 			`for a list of valid handler types`, h)
 		panic(msg)
 	}

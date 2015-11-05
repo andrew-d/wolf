@@ -5,9 +5,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/andrew-d/wolf2/builder"
-	"github.com/andrew-d/wolf2/middleware"
-	"github.com/andrew-d/wolf2/router"
+	"github.com/andrew-d/wolf/builder"
+	"github.com/andrew-d/wolf/middleware"
+	"github.com/andrew-d/wolf/router"
 )
 
 // A combination of a route's pattern, handler, and the middleware stack.

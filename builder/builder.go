@@ -1,7 +1,7 @@
 package builder
 
 import (
-	"github.com/andrew-d/wolf2/types"
+	"github.com/andrew-d/wolf/types"
 )
 
 // Builder is an interface that allows you to define handlers for given routes,
