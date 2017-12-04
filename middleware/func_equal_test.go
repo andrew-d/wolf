@@ -69,11 +69,10 @@ var funcEqualTests = []struct {
 func TestFuncEqual(t *testing.T) {
 	t.Parallel()
 
-	for _, test := range funcEqualTests {
+	for i, test := range funcEqualTests {
 		r := funcEqual(test.a, test.b)
 		if r != test.result {
-			t.Errorf("funcEqual(%v, %v) should have been %v",
-				test.a, test.b, test.result)
+			t.Errorf("%d: funcEqual should have been %v", i, test.result)
 		}
 	}
 	h := mkFn("H")
